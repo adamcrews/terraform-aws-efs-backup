@@ -1,10 +1,10 @@
 output "logs_bucket_name" {
-  value       = aws_s3_bucket.logs.bucket_domain_name
+  value       = module.log_bucket.bucket_domain_name
   description = "Logs bucket name"
 }
 
 output "backups_bucket_name" {
-  value       = aws_s3_bucket.backups.bucket_domain_name
+  value       = module.backup_bucket.bucket_domain_name
   description = "Backups bucket name"
 }
 

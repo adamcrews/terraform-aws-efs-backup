@@ -1,14 +1,12 @@
----
 AWSTemplateFormatVersion: 2010-09-09
 Description: DataPipeline EFS Backup DataPipeline Template
-
 Parameters:
   myS3BackupsBucket:
     Type: String
   mySecurityGroupId:
-    Type: AWS::EC2::SecurityGroup::Id
+    Type: 'AWS::EC2::SecurityGroup::Id'
   mySubnetId:
-    Type: AWS::EC2::Subnet::Id
+    Type: 'AWS::EC2::Subnet::Id'
   myInstanceType:
     Type: String
   myEFSHost:
@@ -16,7 +14,7 @@ Parameters:
   myRegion:
     Type: String
   myImageId:
-    Type: AWS::EC2::Image::Id
+    Type: 'AWS::EC2::Image::Id'
   myTopicArn:
     Type: String
   myS3LogBucket:
@@ -26,18 +24,16 @@ Parameters:
   myDataPipelineRole:
     Type: String
   myKeyPair:
-    Type: AWS::EC2::KeyPair::KeyName
+    Type: 'AWS::EC2::KeyPair::KeyName'
   Tag:
     Type: String
   myPeriod:
     Type: String
   myExecutionTimeout:
     Type: String
-
-
 Resources:
   DataPipelineEFSBackup:
-    Type: AWS::DataPipeline::Pipeline
+    Type: 'AWS::DataPipeline::Pipeline'
     Properties:
       Name: DataPipelineEFSBackup
       Description: DataPipeline EFS Backup
@@ -57,30 +53,30 @@ Resources:
             - Key: schedule
               RefValue: DefaultSchedule
             - Key: role
-              StringValue: "#{myDataPipelineRole}"
+              StringValue: '#{myDataPipelineRole}'
             - Key: resourceRole
-              StringValue: "#{myDataPipelineResourceRole}"
+              StringValue: '#{myDataPipelineResourceRole}'
             - Key: pipelineLogUri
-              StringValue: "#{myS3LogBucket}"
+              StringValue: '#{myS3LogBucket}'
         - Id: EC2ResourceObj
           Name: EC2ResourceObj
           Fields:
             - Key: type
               StringValue: Ec2Resource
             - Key: terminateAfter
-              StringValue: "#{myExecutionTimeout}"
+              StringValue: '#{myExecutionTimeout}'
             - Key: instanceType
-              StringValue: "#{myInstanceType}"
+              StringValue: '#{myInstanceType}'
             - Key: securityGroupIds
-              StringValue: "#{mySecurityGroupId}"
+              StringValue: '#{mySecurityGroupId}'
             - Key: subnetId
-              StringValue: "#{mySubnetId}"
+              StringValue: '#{mySubnetId}'
             - Key: associatePublicIpAddress
-              StringValue: "true"
+              StringValue: 'false'
             - Key: imageId
-              StringValue: "#{myImageId}"
+              StringValue: '#{myImageId}'
             - Key: keyPair
-              StringValue: "#{myKeyPair}"
+              StringValue: '#{myKeyPair}'
         - Id: DefaultSchedule
           Name: DefaultSchedule
           Fields:
@@ -89,7 +85,7 @@ Resources:
             - Key: startAt
               StringValue: FIRST_ACTIVATION_DATE_TIME
             - Key: period
-              StringValue: "#{myPeriod}"
+              StringValue: '#{myPeriod}'
         - Id: ShellCommandActivityObj
           Name: ShellCommandActivityObj
           Fields:
@@ -107,7 +103,7 @@ Resources:
                 if ! mount -l -t nfs4 | grep -qF $source; then
                   sudo mount -t nfs -o nfsvers=4.1 -o rsize=1048576 -o wsize=1048576 -o timeo=600 -o retrans=2 -o hard "$source":/ /backup
                 fi
-                sudo aws s3 sync --delete --exact-timestamps /backup/ s3://$destination/
+                sudo aws s3 sync --sse --delete --exact-timestamps /backup/ s3://$destination/
                 backup_status="$?"
                 # Return code 2 means that the following were skipped:
                 # files/symlinks that do not exist, files that are character special devices, block special device, FIFO's, or sockets, and files that the user cannot read from
@@ -119,11 +115,11 @@ Resources:
                 fi
                 exit "$backup_status"
             - Key: scriptArgument
-              StringValue: "#{myEFSHost}"
+              StringValue: '#{myEFSHost}'
             - Key: scriptArgument
-              StringValue: "#{myRegion}"
+              StringValue: '#{myRegion}'
             - Key: scriptArgument
-              StringValue: "#{myS3BackupsBucket}"
+              StringValue: '#{myS3BackupsBucket}'
             - Key: onSuccess
               RefValue: SuccessNotify
             - Key: onFail
@@ -134,9 +130,9 @@ Resources:
             - Key: type
               StringValue: SnsAlarm
             - Key: topicArn
-              StringValue: "#{myTopicArn}"
+              StringValue: '#{myTopicArn}'
             - Key: subject
-              StringValue: "[Info] EFS Backup Succeeded"
+              StringValue: '[Info] EFS Backup Succeeded'
             - Key: message
               StringValue: |
                 scheduledStartTime: "#{node.@scheduledStartTime}"
@@ -149,9 +145,9 @@ Resources:
             - Key: type
               StringValue: SnsAlarm
             - Key: topicArn
-              StringValue: "#{myTopicArn}"
+              StringValue: '#{myTopicArn}'
             - Key: subject
-              StringValue: "[Alert] EFS Backup Failed"
+              StringValue: '[Alert] EFS Backup Failed'
             - Key: message
               StringValue: |
                 scheduledStartTime: "#{node.@scheduledStartTime}"
@@ -172,7 +168,7 @@ Resources:
             - Key: type
               StringValue: String
             - Key: default
-              StringValue: "360 Minutes"
+              StringValue: 360 Minutes
             - Key: description
               StringValue: Terminate the resource after this period.
         - Id: mySubnetId
@@ -182,7 +178,9 @@ Resources:
             - Key: default
               StringValue: subnet-1234abcd
             - Key: description
-              StringValue: VPC subnet for your restoration EC2 instance (ideally the same subnet used for the backup EFS mount point).
+              StringValue: >-
+                VPC subnet for your restoration EC2 instance (ideally the same
+                subnet used for the backup EFS mount point).
         - Id: mySecurityGroupId
           Attributes:
             - Key: type
@@ -190,7 +188,9 @@ Resources:
             - Key: default
               StringValue: sg-1111111b
             - Key: description
-              StringValue: Security group that can connect to the Production/Backup EFS mount point.
+              StringValue: >-
+                Security group that can connect to the Production/Backup EFS
+                mount point.
         - Id: myEFSHost
           Attributes:
             - Key: type
@@ -212,7 +212,7 @@ Resources:
             - Key: type
               StringValue: String
             - Key: default
-              StringValue: s3://efs-backups
+              StringValue: 's3://efs-backups'
             - Key: description
               StringValue: S3 Backup Bucket
         - Id: myImageId
@@ -228,7 +228,7 @@ Resources:
             - Key: type
               StringValue: String
             - Key: default
-              StringValue: s3://my-s3-log-bucket
+              StringValue: 's3://my-s3-log-bucket'
             - Key: description
               StringValue: S3 Log Bucket
         - Id: myDataPipelineResourceRole
@@ -252,7 +252,7 @@ Resources:
             - Key: type
               StringValue: String
             - Key: default
-              StringValue: arn:aws:sns:hoge
+              StringValue: 'arn:aws:sns:hoge'
             - Key: description
               StringValue: Topic ARN
         - Id: myKeyPair
@@ -268,7 +268,7 @@ Resources:
             - Key: type
               StringValue: String
             - Key: default
-              StringValue: "1 hours"
+              StringValue: 1 hours
             - Key: description
               StringValue: How often the pipeline should run
       ParameterValues:
@@ -289,7 +289,7 @@ Resources:
         - Id: myImageId
           StringValue: !Ref myImageId
         - Id: myS3LogBucket
-          StringValue: !Sub s3://${myS3LogBucket}
+          StringValue: !Sub 's3://${myS3LogBucket}'
         - Id: myDataPipelineResourceRole
           StringValue: !Ref myDataPipelineResourceRole
         - Id: myDataPipelineRole
@@ -300,7 +300,6 @@ Resources:
           StringValue: !Ref myKeyPair
         - Id: myPeriod
           StringValue: !Ref myPeriod
-
 Outputs:
   DataPipelineId:
     Value: !Ref DataPipelineEFSBackup
